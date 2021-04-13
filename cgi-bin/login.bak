@@ -1,0 +1,133 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#define memberfile "../data/members.csv"
+
+char inputstring[200];
+int Inputlength;
+
+char user[200];		//the attempted login credentials
+char pass[200];
+
+char temp1[200];	//strings to collect garbage
+char temp2[200];
+
+char userpass[9000];	//attempted login credentials in one single line
+
+char line[99999];		//lines used by the file reader
+char *thisline;
+
+FILE *fp;
+
+
+int AccessAllowed = 0; //boolean : 0 will deny access, 1 will allow
+
+void DisplayLoginSuccessful(); 
+void DisplayLoginFailed();
+
+
+
+int main()
+
+{
+
+	printf("Content-type: text/html\n\n");
+	printf("<html><body bgcolor=\"#99CCFF\"");
+	
+	Inputlength = atoi(getenv("CONTENT_LENGTH")) +1; //extra one
+	
+
+	fgets(inputstring, Inputlength, stdin);	//we read from stdin
+
+	//we parse the input string in the form "username password" to compare with our members.csv file
+
+	sscanf(inputstring,"%[^=]=%[^&]&%[^=]=%s", temp1, user, temp2, pass);
+	strcat(userpass, user);
+	strcat(userpass, " ");
+	strcat(userpass, pass);
+
+	//End of parsing. Now the string userpass contains the attempted login info.
+
+	
+printf("<body>"); 
+printf("<p>You tried: %s</p>", userpass); 
+	
+
+	//Reading from the .csv
+	
+	fp = fopen(memberfile, "r");
+	if(fp == NULL)
+	{
+		printf("<p>File path error</p>");
+		printf( "</body></HTML>");
+
+		exit(0);
+	}
+	
+	while (fgets(line, 99999, fp) != NULL)
+	{
+		char *Cuser;
+		char *Cpass;
+		char *Cgarbage;
+		char Cuserpass[9000]; //exisiting username and password combination
+
+		//we convert each line 
+
+
+		Cgarbage = strtok(line, " ");	//we don't want the real name
+		Cuser = strtok(NULL, " "); //get the second  word
+		Cpass = strtok(NULL, " ");  //get the third word
+		strcpy(Cuserpass,""); //initialize to null
+
+		strcat(Cuserpass, Cuser);
+		strcat(Cuserpass, " ");
+		strcat(Cuserpass, Cpass);
+
+		//at this point, we know that Cuserpass contains a valid user/pass combination
+		//we want to compare it to the attempted login credentials
+
+	 
+printf("<p>Existing combinations: %s</p>", Cuserpass); 
+	
+
+		//we now compare
+		if (strcmp(Cuserpass, userpass) == 0)
+		{
+			AccessAllowed = 1; //if the attempted login matches, we allow access.
+			goto display;
+		}
+						
+	}
+	//at this point, we know that the attempted login credentials do not match with any
+	//of the registered users.
+
+
+	display:
+		{
+			switch (AccessAllowed)	//we look at the value of accessallowed to see if we let user in
+			{
+				case 0:	DisplayLoginFailed();break;
+				case 1:	DisplayLoginSuccessful();break;
+			}
+		}
+
+
+
+}
+
+void DisplayLoginSuccessful()
+{
+
+printf("<body>"); 
+printf("<p>Login SUCCESS</p>"); 
+printf( "</body></HTML>");
+}
+
+void DisplayLoginFailed()
+{
+
+printf("<body>"); 
+printf("<p>Login FAIL</p>"); 
+printf( "</body></HTML>");
+}
